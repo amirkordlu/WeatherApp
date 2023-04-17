@@ -1,4 +1,4 @@
-package com.amk.weather
+package com.amk.weather.ui.mainscreen
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -20,6 +20,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.amk.weather.R
 import com.amk.weather.ui.theme.*
 
 class MainActivity : ComponentActivity() {
