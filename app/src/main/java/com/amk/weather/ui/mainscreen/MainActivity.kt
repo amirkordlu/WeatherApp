@@ -1,5 +1,6 @@
 package com.amk.weather.ui.mainscreen
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -16,12 +17,16 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.amk.weather.R
+import com.amk.weather.ui.daysweather.WeatherByDay
 import com.amk.weather.ui.theme.*
+import com.amk.weather.util.TempDataInfo
+import com.amk.weather.util.TemperatureData
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -32,7 +37,7 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colors.background
                 ) {
-                    MainScreen()
+                    MainWeatherScreen()
                 }
             }
         }
@@ -40,7 +45,9 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun MainScreen() {
+fun MainWeatherScreen() {
+    val context = LocalContext.current
+
     Image(
         painter = painterResource(R.drawable.img_background),
         contentDescription = "Background",
@@ -65,7 +72,9 @@ fun MainScreen() {
 
             WeatherInfo()
 
-            TempDays()
+            TempDays() {
+                context.startActivity(Intent(context, WeatherByDay::class.java))
+            }
 
             Divider(
                 color = Color(226, 162, 114),
@@ -157,7 +166,7 @@ fun Weather() {
         Image(
             modifier = Modifier
                 .size(193.dp, 190.dp),
-            painter = painterResource(id = R.drawable.ic_cludy), contentDescription = null
+            painter = painterResource(id = R.drawable.ic_rainy), contentDescription = null
         )
 
         Column(
@@ -264,25 +273,26 @@ fun Temperature() {
         contentPadding = PaddingValues(start = 16.dp, end = 16.dp),
         userScrollEnabled = true
     ) {
-        items(20) {
+        items(TempDataInfo.size) {
             TemperatureItem(
-                tempImage = R.drawable.ic_sunny_cloudy,
-                tempTime = "now",
-                tempValue = "19 °"
+                TempDataInfo[it], TempDataInfo[it].time == "now"
             )
         }
     }
 }
 
 @Composable
-fun TemperatureItem(tempImage: Int, tempTime: String, tempValue: String) {
-
+fun TemperatureItem(temperatureData: TemperatureData, isNowItem: Boolean) {
     Surface(
         modifier = Modifier
             .padding(start = 6.dp, end = 6.dp)
             .size(56.dp, 98.dp),
         shape = RoundedCornerShape(48.dp),
-        color = TemperatureItemSelectedBackground
+        color = if (isNowItem) {
+            TemperatureItemSelectedBackground
+        } else {
+            TemperatureItemBackground
+        }
     ) {
 
         Column(
@@ -292,20 +302,24 @@ fun TemperatureItem(tempImage: Int, tempTime: String, tempValue: String) {
         ) {
 
             Text(
-                text = tempTime,
+                text = temperatureData.time,
                 fontSize = 14.sp,
                 fontFamily = interRegular,
-                color = Color(48, 51, 69),
+                color = if (isNowItem) {
+                    Color(48, 51, 69)
+                } else {
+                    TemperatureItemTime
+                },
             )
 
             Image(
                 modifier = Modifier.size(34.dp),
-                painter = painterResource(tempImage),
+                painter = painterResource(temperatureData.img),
                 contentDescription = null
             )
 
             Text(
-                text = tempValue,
+                text = temperatureData.temp,
                 fontSize = 14.sp,
                 fontFamily = interBold,
                 color = Color(48, 51, 69),
@@ -318,7 +332,7 @@ fun TemperatureItem(tempImage: Int, tempTime: String, tempValue: String) {
 }
 
 @Composable
-fun TempDays() {
+fun TempDays(onDaysWeather: () -> Unit) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -361,7 +375,7 @@ fun TempDays() {
                 color = Color(214, 153, 107),
             )
 
-            IconButton(onClick = { /*TODO*/ }) {
+            IconButton(onClick = { onDaysWeather.invoke() }) {
                 Image(
                     painter = painterResource(id = R.drawable.ic_next),
                     contentDescription = null,
@@ -380,6 +394,6 @@ fun TempDays() {
 @Composable
 fun DefaultPreview() {
     WeatherTheme {
-        MainScreen()
+        MainWeatherScreen()
     }
 }
