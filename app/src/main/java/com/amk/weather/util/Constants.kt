@@ -2,14 +2,7 @@ package com.amk.weather.util
 
 import com.amk.weather.R
 
-val WeekListDataInfo = listOf(
-    WeekWeatherData("Thursday", "21 °", R.drawable.ic_sun),
-    WeekWeatherData("Friday", "24 °", R.drawable.ic_sun),
-    WeekWeatherData("Saturday", "18 °", R.drawable.ic_sunny_cloudy),
-    WeekWeatherData("Sunday", "12 °", R.drawable.ic_cloudy),
-    WeekWeatherData("Monday", "16 °", R.drawable.ic_cloudy_rainy),
-    WeekWeatherData("Tuesday", "18 °", R.drawable.ic_cloudy_rainy),
-)
+const val BASE_URL = "https://api.openweathermap.org/data/2.5/"
 
 val TempDataInfo = listOf(
     TemperatureData("11:00", R.drawable.ic_cloudy, "20 °"),

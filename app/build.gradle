@@ -80,4 +80,7 @@ dependencies {
     implementation "dev.burnoo:cokoin-android-viewmodel:0.3.2"
     implementation "dev.burnoo:cokoin-android-navigation:0.3.2"
 
+    //Shimmer
+    implementation 'com.valentinilk.shimmer:compose-shimmer:1.0.4'
+
 }

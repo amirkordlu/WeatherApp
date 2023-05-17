@@ -22,20 +22,31 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.amk.weather.R
+import com.amk.weather.di.myModules
+import com.amk.weather.model.data.DaysWeather
+import com.amk.weather.model.data.DaysWeatherResponse
+import com.amk.weather.ui.shimmer.DaysWeatherShimmer
 import com.amk.weather.ui.theme.*
-import com.amk.weather.util.WeekListDataInfo
-import com.amk.weather.util.WeekWeatherData
+import com.amk.weather.util.convertKelvinToCelsius
+import com.amk.weather.util.convertMeterOnMinToKilometerOnHour
+import com.amk.weather.util.convertUnixToDate
+import com.amk.weather.util.weatherIcon
+import dev.burnoo.cokoin.Koin
+import dev.burnoo.cokoin.navigation.getNavController
+import dev.burnoo.cokoin.navigation.getNavViewModel
 
 class WeatherByDay : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            WeatherTheme {
-                Surface(
-                    modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colors.background
-                ) {
-                    DaysWeather()
+            Koin(appDeclaration = { modules(myModules) }) {
+                WeatherTheme {
+                    Surface(
+                        modifier = Modifier.fillMaxSize(),
+                        color = MaterialTheme.colors.background
+                    ) {
+                        DaysWeather()
+                    }
                 }
             }
         }
@@ -44,6 +55,10 @@ class WeatherByDay : ComponentActivity() {
 
 @Composable
 fun DaysWeather() {
+    val navigation = getNavController()
+    val viewModel = getNavViewModel<WeatherByDayViewModel>()
+    viewModel.getWeatherByDay()
+
     Image(
         painter = painterResource(R.drawable.img_background),
         contentDescription = "Background",
@@ -52,35 +67,41 @@ fun DaysWeather() {
             .fillMaxSize()
     )
 
-    Box(modifier = Modifier.fillMaxSize()) {
+    if (!viewModel.showLoading.value) {
+        Box(modifier = Modifier.fillMaxSize()) {
 
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-//                .verticalScroll(rememberScrollState())
-        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+            ) {
 
-            WeatherToolbar()
+                WeatherToolbar() {
+                    navigation.popBackStack()
+                }
 
-            TomorrowWeather()
+                TomorrowWeather(viewModel.weatherByDay.value)
 
-            WeekWeather()
+                WeekWeather(viewModel.weatherByDay.value)
 
+            }
         }
+    } else {
+        DaysWeatherShimmer()
     }
+
 
 }
 
 @Composable
-fun WeatherToolbar() {
+fun WeatherToolbar(onBackClicked: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(start = 16.dp, end = 16.dp, top = 18.dp, bottom = 10.dp),
+            .padding(start = 16.dp, end = 16.dp, top = 18.dp, bottom = 16.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        IconButton(onClick = { /*TODO*/ }) {
+        IconButton(onClick = { onBackClicked.invoke() }) {
             Image(
                 painter = painterResource(id = R.drawable.ic_back),
                 contentDescription = null,
@@ -90,7 +111,7 @@ fun WeatherToolbar() {
         }
 
         Text(
-            text = "Next 7 Days", fontSize = 20.sp, fontFamily = interRegular
+            text = "Next Days", fontSize = 20.sp, fontFamily = interRegular
         )
 
         IconButton(onClick = { /*TODO*/ }) {
@@ -100,12 +121,12 @@ fun WeatherToolbar() {
 }
 
 @Composable
-fun TomorrowWeather() {
+fun TomorrowWeather(weather: DaysWeatherResponse) {
     Surface(
         modifier = Modifier
             .fillMaxWidth()
             .height(236.dp)
-            .padding(top = 12.dp, start = 32.dp, end = 32.dp, bottom = 20.dp),
+            .padding(top = 12.dp, start = 32.dp, end = 32.dp, bottom = 22.dp),
         shape = RoundedCornerShape(24.dp),
         color = BigCardViewBackground,
         border = BorderStroke(0.5.dp, Color.White.copy(alpha = 0.70f))
@@ -113,66 +134,78 @@ fun TomorrowWeather() {
 
         Column {
 
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(start = 20.dp, end = 20.dp, top = 20.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.Top
-            ) {
+            if (weather.list.isNotEmpty()) {
 
                 Row(
-                    modifier = Modifier,
-                    verticalAlignment = Alignment.CenterVertically
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(start = 20.dp, end = 20.dp, top = 20.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.Top
                 ) {
 
-                    Text(
-                        text = "Tomorrow",
-                        fontFamily = interSemiBold,
-                        color = Color(48, 51, 69),
-                        fontSize = 14.sp
-                    )
+                    Row(
+                        modifier = Modifier,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
 
-                    IconButton(onClick = { /*TODO*/ }, modifier = Modifier.size(66.dp)) {
+                        Text(
+                            text = "Tomorrow",
+                            fontFamily = interSemiBold,
+                            color = Color(48, 51, 69),
+                            fontSize = 14.sp
+                        )
+
+                        IconButton(onClick = { /*TODO*/ }, modifier = Modifier.size(66.dp)) {
+
+                        }
+
+                    }
+
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+
+                        Text(
+                            text = convertKelvinToCelsius(weather.list[1].temp.day).toString() + " °",
+                            fontSize = 14.sp,
+                            fontFamily = interBold,
+                            color = Color(48, 51, 69)
+                        )
+
+                        Image(
+                            modifier = Modifier
+                                .size(66.dp),
+                            painter = painterResource(id = weatherIcon(weather.list[1].weather[0].icon)),
+                            contentDescription = null
+                        )
 
                     }
 
                 }
 
                 Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(start = 24.dp, end = 24.dp, top = 16.dp),
+                    horizontalArrangement = Arrangement.SpaceEvenly,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
 
-                    Text(
-                        text = "22 °",
-                        fontSize = 14.sp,
-                        fontFamily = interBold,
-                        color = Color(48, 51, 69)
+                    TomorrowWeatherItem(
+                        R.drawable.ic_umberella,
+                        weather.list[1].rain.toInt().toString() + " mm"
                     )
-
-                    Image(
-                        modifier = Modifier
-                            .size(66.dp),
-                        painter = painterResource(id = R.drawable.ic_sunny_cloudy),
-                        contentDescription = null
+                    TomorrowWeatherItem(
+                        R.drawable.ic_wind,
+                        convertMeterOnMinToKilometerOnHour(weather.list[1].speed).toString() + " km/h"
+                    )
+                    TomorrowWeatherItem(
+                        R.drawable.ic_humidity,
+                        weather.list[1].humidity.toString() + " %"
                     )
 
                 }
-
-            }
-
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(start = 24.dp, end = 24.dp, top = 16.dp),
-                horizontalArrangement = Arrangement.SpaceEvenly,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-
-                TomorrowWeatherItem(R.drawable.ic_umberella, "1 cm")
-                TomorrowWeatherItem(R.drawable.ic_wind, "15 km/h")
-                TomorrowWeatherItem(R.drawable.ic_humidity, "50 %")
-
             }
         }
     }
@@ -200,20 +233,22 @@ fun TomorrowWeatherItem(itemImage: Int, itemValue: String) {
 }
 
 @Composable
-fun WeekWeather() {
+fun WeekWeather(weather: DaysWeatherResponse) {
     LazyColumn(
         modifier = Modifier.padding(top = 2.dp, bottom = 10.dp),
         contentPadding = PaddingValues(start = 16.dp, end = 16.dp),
         userScrollEnabled = true
     ) {
-        items(WeekListDataInfo.size) {
-            WeekWeatherItem(WeekListDataInfo[it])
+        items(weather.list.size) {
+            if (it in 2..6) {
+                WeekWeatherItem(weather.list[it], weatherIcon(weather.list[it].weather[0].icon))
+            }
         }
     }
 }
 
 @Composable
-fun WeekWeatherItem(weekDataList: WeekWeatherData) {
+fun WeekWeatherItem(daysWeather: DaysWeather, weatherIcon: Int) {
     Surface(
         modifier = Modifier
             .fillMaxWidth()
@@ -237,7 +272,7 @@ fun WeekWeatherItem(weekDataList: WeekWeatherData) {
             ) {
 
                 Text(
-                    text = weekDataList.day,
+                    text = convertUnixToDate(daysWeather.dt.toLong()),
                     fontFamily = interSemiBold,
                     color = Color(48, 51, 69),
                     fontSize = 14.sp
@@ -254,7 +289,7 @@ fun WeekWeatherItem(weekDataList: WeekWeatherData) {
             ) {
 
                 Text(
-                    text = weekDataList.temp,
+                    text = convertKelvinToCelsius(daysWeather.temp.day).toString() + " °",
                     fontSize = 14.sp,
                     fontFamily = interBold,
                     color = Color(48, 51, 69)
@@ -263,7 +298,7 @@ fun WeekWeatherItem(weekDataList: WeekWeatherData) {
                 Image(
                     modifier = Modifier
                         .size(64.dp),
-                    painter = painterResource(id = weekDataList.img),
+                    painter = painterResource(id = weatherIcon),
                     contentDescription = null
                 )
             }

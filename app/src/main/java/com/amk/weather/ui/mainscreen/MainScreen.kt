@@ -1,7 +1,7 @@
 package com.amk.weather.ui.mainscreen
 
-import android.content.Intent
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.BorderStroke
@@ -23,21 +23,27 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.amk.weather.R
-import com.amk.weather.ui.daysweather.WeatherByDay
+import com.amk.weather.di.myModules
+import com.amk.weather.model.data.CurrentWeatherResponse
 import com.amk.weather.ui.theme.*
-import com.amk.weather.util.TempDataInfo
-import com.amk.weather.util.TemperatureData
+import com.amk.weather.util.*
+import com.valentinilk.shimmer.shimmer
+import dev.burnoo.cokoin.Koin
+import dev.burnoo.cokoin.navigation.getNavController
+import dev.burnoo.cokoin.navigation.getNavViewModel
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            WeatherTheme {
-                Surface(
-                    modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colors.background
-                ) {
-                    MainWeatherScreen()
+            Koin(appDeclaration = { modules(myModules) }) {
+                WeatherTheme {
+                    Surface(
+                        modifier = Modifier.fillMaxSize(),
+                        color = MaterialTheme.colors.background
+                    ) {
+                        MainWeatherScreen()
+                    }
                 }
             }
         }
@@ -47,6 +53,10 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun MainWeatherScreen() {
     val context = LocalContext.current
+    val navigation = getNavController()
+    val viewModel =
+        getNavViewModel<MainScreenViewModel>()
+    viewModel.getWeatherInfo()
 
     Image(
         painter = painterResource(R.drawable.img_background),
@@ -56,34 +66,92 @@ fun MainWeatherScreen() {
             .fillMaxSize()
     )
 
-    Box(modifier = Modifier.fillMaxSize()) {
-
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-        ) {
-
-            MainToolbar()
-
-            CityName()
-
-            Weather()
-
-            WeatherInfo()
-
-            TempDays() {
-                context.startActivity(Intent(context, WeatherByDay::class.java))
+    if (!NetworkChecker(context).isInternetConnected) {
+        NoInternetDialog(onTryAgain = {
+            if (NetworkChecker(context).isInternetConnected) {
+                viewModel.getWeatherInfo()
+            } else {
+                vibratePhone(context, 200)
+                Toast.makeText(context, "No internet connection!", Toast.LENGTH_SHORT).show()
             }
+        }, onDismiss = {})
+    }
 
-            Divider(
-                color = Color(226, 162, 114),
-                thickness = 0.5.dp,
-                modifier = Modifier.padding(start = 32.dp, top = 8.dp, bottom = 8.dp, end = 32.dp)
-            )
+    if (viewModel.showLoading.value) {
 
-            Temperature()
+        Box(modifier = Modifier.fillMaxSize()) {
 
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .shimmer()
+                    .verticalScroll(rememberScrollState())
+            ) {
+
+                MainToolbar()
+
+                CityName(viewModel.weatherInfo.value, getDateOfMobile())
+
+                Weather(viewModel.weatherInfo.value)
+
+                WeatherInfo(viewModel.weatherInfo.value)
+
+                TempDays {
+                   navigation.navigate(MyScreens.WeatherScreen.route)
+                }
+
+                Divider(
+                    color = Color(226, 162, 114),
+                    thickness = 0.5.dp,
+                    modifier = Modifier.padding(
+                        start = 32.dp,
+                        top = 8.dp,
+                        bottom = 8.dp,
+                        end = 32.dp
+                    )
+                )
+
+                Temperature()
+
+            }
+        }
+
+    } else {
+
+        Box(modifier = Modifier.fillMaxSize()) {
+
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+            ) {
+
+                MainToolbar()
+
+                CityName(viewModel.weatherInfo.value, getDateOfMobile())
+
+                Weather(viewModel.weatherInfo.value)
+
+                WeatherInfo(viewModel.weatherInfo.value)
+
+                TempDays {
+                    navigation.navigate(MyScreens.WeatherScreen.route)
+                }
+
+                Divider(
+                    color = Color(226, 162, 114),
+                    thickness = 0.5.dp,
+                    modifier = Modifier.padding(
+                        start = 32.dp,
+                        top = 8.dp,
+                        bottom = 8.dp,
+                        end = 32.dp
+                    )
+                )
+
+                Temperature()
+
+            }
         }
     }
 }
@@ -124,7 +192,7 @@ fun MainToolbar() {
 }
 
 @Composable
-fun CityName() {
+fun CityName(weatherName: CurrentWeatherResponse, date: String) {
     Column(
         modifier = Modifier
             .padding(top = 20.dp)
@@ -136,15 +204,14 @@ fun CityName() {
 
         Text(
             modifier = Modifier.padding(top = 8.dp, start = 32.dp),
-            text = "Stockholm,\n" +
-                    "Sweden",
+            text = weatherName.name,
             fontFamily = interMedium,
             fontSize = 34.sp,
             color = Color(49, 51, 65)
         )
 
         Text(
-            text = "Tue, Jun 30",
+            text = date,
             modifier = Modifier.padding(top = 4.dp, start = 32.dp),
             color = Color(154, 147, 140),
             fontFamily = interRegular
@@ -154,7 +221,7 @@ fun CityName() {
 }
 
 @Composable
-fun Weather() {
+fun Weather(weather: CurrentWeatherResponse) {
     Row(
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically,
@@ -175,7 +242,7 @@ fun Weather() {
         ) {
 
             Text(
-                text = "19",
+                text = convertKelvinToCelsius(weather.main.temp).toString(),
                 fontFamily = interBold,
                 fontSize = 80.sp,
                 color = Color(48, 51, 69)
@@ -183,7 +250,7 @@ fun Weather() {
 
             Text(
                 modifier = Modifier.padding(bottom = 18.dp),
-                text = "Rainy",
+                text = weather.weather[0].main,
                 fontFamily = interRegular,
                 fontSize = 30.sp,
                 color = Color(48, 51, 69)
@@ -203,15 +270,18 @@ fun Weather() {
 }
 
 @Composable
-fun WeatherInfo() {
+fun WeatherInfo(weatherInfo: CurrentWeatherResponse) {
     WeatherInfoItem(R.drawable.ic_umberella, "RainFall", "3cm")
-    WeatherInfoItem(R.drawable.ic_wind, "Wind", "19km/h")
-    WeatherInfoItem(R.drawable.ic_humidity, "Humidity", "64%")
+    WeatherInfoItem(
+        R.drawable.ic_wind,
+        "Wind",
+        "${convertMeterOnMinToKilometerOnHour(weatherInfo.wind.speed)} km/h"
+    )
+    WeatherInfoItem(R.drawable.ic_humidity, "Humidity", "${weatherInfo.main.humidity} %")
 }
 
 @Composable
 fun WeatherInfoItem(itemImage: Int, itemText: String, itemValue: String) {
-
     Surface(
         modifier = Modifier
             .fillMaxWidth()
@@ -263,7 +333,6 @@ fun WeatherInfoItem(itemImage: Int, itemText: String, itemValue: String) {
         }
 
     }
-
 }
 
 @Composable
@@ -388,6 +457,23 @@ fun TempDays(onDaysWeather: () -> Unit) {
 
 
     }
+}
+
+@Composable
+fun NoInternetDialog(
+    onTryAgain: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = { onDismiss.invoke() },
+        title = { Text(text = "No Internet Connection") },
+        text = { Text(text = "Please check your internet connection and try again.") },
+        confirmButton = {
+            TextButton(onClick = { onTryAgain.invoke() }) {
+                Text(text = "Try again")
+            }
+        }
+    )
 }
 
 @Preview(showBackground = true)
