@@ -25,9 +25,9 @@ import androidx.compose.ui.unit.sp
 import com.amk.weather.R
 import com.amk.weather.di.myModules
 import com.amk.weather.model.data.CurrentWeatherResponse
+import com.amk.weather.ui.shimmer.MainScreenShimmer
 import com.amk.weather.ui.theme.*
 import com.amk.weather.util.*
-import com.valentinilk.shimmer.shimmer
 import dev.burnoo.cokoin.Koin
 import dev.burnoo.cokoin.navigation.getNavController
 import dev.burnoo.cokoin.navigation.getNavViewModel
@@ -79,42 +79,7 @@ fun MainWeatherScreen() {
 
     if (viewModel.showLoading.value) {
 
-        Box(modifier = Modifier.fillMaxSize()) {
-
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .shimmer()
-                    .verticalScroll(rememberScrollState())
-            ) {
-
-                MainToolbar()
-
-                CityName(viewModel.weatherInfo.value, getDateOfMobile())
-
-                Weather(viewModel.weatherInfo.value)
-
-                WeatherInfo(viewModel.weatherInfo.value)
-
-                TempDays {
-                   navigation.navigate(MyScreens.WeatherScreen.route)
-                }
-
-                Divider(
-                    color = Color(226, 162, 114),
-                    thickness = 0.5.dp,
-                    modifier = Modifier.padding(
-                        start = 32.dp,
-                        top = 8.dp,
-                        bottom = 8.dp,
-                        end = 32.dp
-                    )
-                )
-
-                Temperature()
-
-            }
-        }
+        MainScreenShimmer()
 
     } else {
 
