@@ -67,6 +67,15 @@ fun weatherIcon(icon: String): Int {
         "11d" -> return (R.drawable.ic_thunder)
         "13d" -> return (R.drawable.ic_snowy)
         "50d" -> return (R.drawable.ic_windy)
+        "01n" -> return (R.drawable.ic_moon)
+        "02n" -> return (R.drawable.ic_sunny_cloudy)
+        "03n" -> return (R.drawable.ic_cloudy)
+        "04n" -> return (R.drawable.ic_cloudy)
+        "09n" -> return (R.drawable.ic_cloudy_rainy)
+        "10n" -> return (R.drawable.ic_rainy)
+        "11n" -> return (R.drawable.ic_thunder)
+        "13n" -> return (R.drawable.ic_snowy)
+        "50n" -> return (R.drawable.ic_windy)
     }
     return R.drawable.ic_error
 }

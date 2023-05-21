@@ -198,7 +198,7 @@ fun Weather(weather: CurrentWeatherResponse) {
         Image(
             modifier = Modifier
                 .size(193.dp, 190.dp),
-            painter = painterResource(id = R.drawable.ic_rainy), contentDescription = null
+            painter = painterResource(id = weatherIcon(weather.weather[0].icon)), contentDescription = null
         )
 
         Column(
