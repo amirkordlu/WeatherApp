@@ -2,6 +2,7 @@ package com.amk.weather.model.net
 
 import com.amk.weather.model.data.CurrentWeatherResponse
 import com.amk.weather.model.data.DaysWeatherResponse
+import com.amk.weather.model.data.HourlyWeatherResponse
 import com.amk.weather.util.BASE_URL
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
@@ -24,6 +25,13 @@ interface ApiService {
         @Query("lon") lon: Double = 51.0586022,
         @Query("appid") appid: String = "0fc44a70fe8abd7f3ba7b06ee76148be"
     ): DaysWeatherResponse
+
+    @GET("forecast")
+    suspend fun getHourlyWeather(
+        @Query("lat") lat: Double = 35.6589015,
+        @Query("lon") lon: Double = 51.0586022,
+        @Query("appid") appid: String = "0fc44a70fe8abd7f3ba7b06ee76148be"
+    ): HourlyWeatherResponse
 
 }
 

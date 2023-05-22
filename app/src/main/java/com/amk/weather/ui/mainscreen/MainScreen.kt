@@ -25,6 +25,8 @@ import androidx.compose.ui.unit.sp
 import com.amk.weather.R
 import com.amk.weather.di.myModules
 import com.amk.weather.model.data.CurrentWeatherResponse
+import com.amk.weather.model.data.HourlyWeather
+import com.amk.weather.model.data.HourlyWeatherResponse
 import com.amk.weather.ui.shimmer.MainScreenShimmer
 import com.amk.weather.ui.theme.*
 import com.amk.weather.util.*
@@ -54,9 +56,11 @@ class MainActivity : ComponentActivity() {
 fun MainWeatherScreen() {
     val context = LocalContext.current
     val navigation = getNavController()
-    val viewModel =
-        getNavViewModel<MainScreenViewModel>()
+    val viewModel = getNavViewModel<MainScreenViewModel>()
+    val hourlyViewModel = getNavViewModel<HourlyWeatherViewModel>()
+
     viewModel.getWeatherInfo()
+    hourlyViewModel.getHourlyWeather()
 
     Image(
         painter = painterResource(R.drawable.img_background),
@@ -114,7 +118,7 @@ fun MainWeatherScreen() {
                     )
                 )
 
-                Temperature()
+                Temperature(hourlyViewModel.hourlyWeather.value)
 
             }
         }
@@ -198,7 +202,8 @@ fun Weather(weather: CurrentWeatherResponse) {
         Image(
             modifier = Modifier
                 .size(193.dp, 190.dp),
-            painter = painterResource(id = weatherIcon(weather.weather[0].icon)), contentDescription = null
+            painter = painterResource(id = weatherIcon(weather.weather[0].icon)),
+            contentDescription = null
         )
 
         Column(
@@ -301,32 +306,30 @@ fun WeatherInfoItem(itemImage: Int, itemText: String, itemValue: String) {
 }
 
 @Composable
-fun Temperature() {
+fun Temperature(hourlyWeather: HourlyWeatherResponse) {
     LazyRow(
         modifier = Modifier.padding(top = 8.dp, bottom = 14.dp),
         contentPadding = PaddingValues(start = 16.dp, end = 16.dp),
         userScrollEnabled = true
     ) {
-        items(TempDataInfo.size) {
-            TemperatureItem(
-                TempDataInfo[it], TempDataInfo[it].time == "now"
-            )
+        items(hourlyWeather.list.size) {
+            if (convertUnixToDate(hourlyWeather.list[it].dt.toLong()) == getDayOfWeek()) {
+                TemperatureItem(
+                    hourlyWeather.list[it]
+                )
+            }
         }
     }
 }
 
 @Composable
-fun TemperatureItem(temperatureData: TemperatureData, isNowItem: Boolean) {
+fun TemperatureItem(hourlyWeather: HourlyWeather) {
     Surface(
         modifier = Modifier
             .padding(start = 6.dp, end = 6.dp)
             .size(56.dp, 98.dp),
         shape = RoundedCornerShape(48.dp),
-        color = if (isNowItem) {
-            TemperatureItemSelectedBackground
-        } else {
-            TemperatureItemBackground
-        }
+        color = TemperatureItemBackground
     ) {
 
         Column(
@@ -336,24 +339,21 @@ fun TemperatureItem(temperatureData: TemperatureData, isNowItem: Boolean) {
         ) {
 
             Text(
-                text = temperatureData.time,
+                text = formatTimeString(hourlyWeather.dt_txt),
                 fontSize = 14.sp,
                 fontFamily = interRegular,
-                color = if (isNowItem) {
-                    Color(48, 51, 69)
-                } else {
-                    TemperatureItemTime
-                },
+                color =
+                TemperatureItemTime,
             )
 
             Image(
                 modifier = Modifier.size(34.dp),
-                painter = painterResource(temperatureData.img),
+                painter = painterResource(weatherIcon(hourlyWeather.weather[0].icon)),
                 contentDescription = null
             )
 
             Text(
-                text = temperatureData.temp,
+                text = convertKelvinToCelsius(hourlyWeather.main.temp).toString() + " °",
                 fontSize = 14.sp,
                 fontFamily = interBold,
                 color = Color(48, 51, 69),
