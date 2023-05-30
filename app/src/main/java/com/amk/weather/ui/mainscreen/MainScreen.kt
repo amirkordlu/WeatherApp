@@ -30,6 +30,8 @@ import com.amk.weather.model.data.HourlyWeatherResponse
 import com.amk.weather.ui.shimmer.MainScreenShimmer
 import com.amk.weather.ui.theme.*
 import com.amk.weather.util.*
+import com.google.accompanist.swiperefresh.SwipeRefresh
+import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
 import dev.burnoo.cokoin.Koin
 import dev.burnoo.cokoin.navigation.getNavController
 import dev.burnoo.cokoin.navigation.getNavViewModel
@@ -58,6 +60,7 @@ fun MainWeatherScreen() {
     val navigation = getNavController()
     val viewModel = getNavViewModel<MainScreenViewModel>()
     val hourlyViewModel = getNavViewModel<HourlyWeatherViewModel>()
+    val swipeRefreshState = rememberSwipeRefreshState(isRefreshing = viewModel.showLoading.value)
 
     viewModel.getWeatherInfo()
     hourlyViewModel.getHourlyWeather()
@@ -89,37 +92,45 @@ fun MainWeatherScreen() {
 
         Box(modifier = Modifier.fillMaxSize()) {
 
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .verticalScroll(rememberScrollState())
-            ) {
-
-                MainToolbar()
-
-                CityName(viewModel.weatherInfo.value, getDateOfMobile())
-
-                Weather(viewModel.weatherInfo.value)
-
-                WeatherInfo(viewModel.weatherInfo.value)
-
-                TempDays {
-                    navigation.navigate(MyScreens.WeatherScreen.route)
+            SwipeRefresh(state = swipeRefreshState, onRefresh = {
+                if (viewModel.showLoading.value) {
+                    viewModel.getWeatherInfo()
+                    hourlyViewModel.getHourlyWeather()
                 }
+            }) {
 
-                Divider(
-                    color = Color(226, 162, 114),
-                    thickness = 0.5.dp,
-                    modifier = Modifier.padding(
-                        start = 32.dp,
-                        top = 8.dp,
-                        bottom = 8.dp,
-                        end = 32.dp
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .verticalScroll(rememberScrollState())
+                ) {
+
+                    MainToolbar()
+
+                    CityName(viewModel.weatherInfo.value, getDateOfMobile())
+
+                    Weather(viewModel.weatherInfo.value)
+
+                    WeatherInfo(viewModel.weatherInfo.value)
+
+                    TempDays {
+                        navigation.navigate(MyScreens.WeatherScreen.route)
+                    }
+
+                    Divider(
+                        color = Color(226, 162, 114),
+                        thickness = 0.5.dp,
+                        modifier = Modifier.padding(
+                            start = 32.dp,
+                            top = 8.dp,
+                            bottom = 8.dp,
+                            end = 32.dp
+                        )
                     )
-                )
 
-                Temperature(hourlyViewModel.hourlyWeather.value)
+                    Temperature(hourlyViewModel.hourlyWeather.value)
 
+                }
             }
         }
     }
@@ -423,6 +434,21 @@ fun TempDays(onDaysWeather: () -> Unit) {
 
     }
 }
+
+//@Composable
+//fun SwipeRefreshLayout(isLoading: Boolean) {
+//    ComposePullToRefresh(
+//        isRefreshing = isLoading,
+//        onRefresh = {
+//
+//        },
+//        indicatorColor = MaterialTheme.colors.onPrimary,
+//        content = {
+//
+//        }
+//    )
+//
+//}
 
 @Composable
 fun NoInternetDialog(
