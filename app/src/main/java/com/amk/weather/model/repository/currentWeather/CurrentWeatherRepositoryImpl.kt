@@ -7,8 +7,8 @@ class CurrentWeatherRepositoryImpl(
     private val apiService: ApiService
 ) : CurrentWeatherRepository {
 
-    override suspend fun getCurrentWeather(): CurrentWeatherResponse {
-        return apiService.getCurrentWeather()
+    override suspend fun getCurrentWeather(lat: Double, lon: Double): CurrentWeatherResponse {
+        return apiService.getCurrentWeather(lat, lon)
     }
 
 }

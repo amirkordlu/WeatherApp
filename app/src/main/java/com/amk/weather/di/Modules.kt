@@ -23,5 +23,4 @@ val myModules = module {
     viewModel { WeatherByDayViewModel(get()) }
     viewModel { HourlyWeatherViewModel(get()) }
 
-
 }

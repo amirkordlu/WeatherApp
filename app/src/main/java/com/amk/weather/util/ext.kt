@@ -1,10 +1,6 @@
 package com.amk.weather.util
 
 import android.annotation.SuppressLint
-import android.content.Context
-import android.os.Build
-import android.os.VibrationEffect
-import android.os.Vibrator
 import android.util.Log
 import com.amk.weather.R
 import com.amk.weather.model.data.*
@@ -52,16 +48,6 @@ fun convertKelvinToCelsius(kelvin: Double): Int {
 
 fun convertMeterOnMinToKilometerOnHour(wind: Double): Int {
     return (wind * 3.6).toInt()
-}
-
-fun vibratePhone(context: Context, milliseconds: Long) {
-    val vibrator = context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
-
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-        vibrator.vibrate(VibrationEffect.createOneShot(milliseconds, VibrationEffect.EFFECT_TICK))
-    } else {
-        vibrator.vibrate(milliseconds)
-    }
 }
 
 @SuppressLint("SimpleDateFormat")

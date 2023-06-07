@@ -9,15 +9,15 @@ import com.amk.weather.util.coroutineExceptionHandler
 import kotlinx.coroutines.launch
 
 class MainScreenViewModel(
-    private val currentWeatherRepository: CurrentWeatherRepository,
+    private val currentWeatherRepository: CurrentWeatherRepository
 ) : ViewModel() {
 
     val weatherInfo = mutableStateOf(CWREx)
     val showLoading = mutableStateOf(true)
 
-    fun getWeatherInfo() {
+    fun getWeatherInfo(lat: Double, lon: Double) {
         viewModelScope.launch(coroutineExceptionHandler) {
-            val weather = currentWeatherRepository.getCurrentWeather()
+            val weather = currentWeatherRepository.getCurrentWeather(lat, lon)
             if (weather.cod == 200) {
                 weatherInfo.value = weather
                 showLoading.value = false

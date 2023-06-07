@@ -18,12 +18,17 @@ import com.amk.weather.ui.theme.WeatherTheme
 import com.amk.weather.util.MyScreens
 import dev.burnoo.cokoin.Koin
 import dev.burnoo.cokoin.navigation.KoinNavHost
+import org.koin.android.ext.koin.androidContext
+import org.koin.core.context.startKoin
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            Koin(appDeclaration = { modules(myModules) }) {
+            Koin(appDeclaration = {
+                androidContext(this@MainActivity)
+                modules(myModules)
+            }) {
                 WeatherTheme {
                     Surface(
                         modifier = Modifier.fillMaxSize(),
@@ -51,7 +56,7 @@ fun WeatherUI() {
     KoinNavHost(
         navController = navController,
         startDestination = MyScreens.MainScreen.route
-    ){
+    ) {
 
         composable(MyScreens.MainScreen.route) {
             MainWeatherScreen()
@@ -59,7 +64,8 @@ fun WeatherUI() {
         }
 
         composable(
-            route = MyScreens.WeatherScreen.route) {
+            route = MyScreens.WeatherScreen.route
+        ) {
             DaysWeather()
         }
 
