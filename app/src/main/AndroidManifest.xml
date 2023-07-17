@@ -41,10 +41,6 @@
             </intent-filter>
         </activity>
 
-        <meta-data
-            android:name="com.google.android.geo.API_KEY"
-            android:value="AIzaSyAI7b5VmZLXiKVHsMUmPuLoAYzffSV7jHo" />
-
     </application>
 
 </manifest>

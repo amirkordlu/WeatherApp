@@ -14,8 +14,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.*
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -33,10 +31,6 @@ import com.amk.weather.model.data.HourlyWeatherResponse
 import com.amk.weather.ui.shimmer.MainScreenShimmer
 import com.amk.weather.ui.theme.*
 import com.amk.weather.util.*
-import com.google.accompanist.swiperefresh.SwipeRefresh
-import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
-import com.google.android.gms.maps.model.LatLng
-import com.google.maps.android.compose.GoogleMap
 import dev.burnoo.cokoin.Koin
 import dev.burnoo.cokoin.navigation.getNavController
 import dev.burnoo.cokoin.navigation.getNavViewModel
@@ -66,97 +60,70 @@ fun MainWeatherScreen() {
     val navigation = getNavController()
     val viewModel = getNavViewModel<MainScreenViewModel>()
     val hourlyViewModel = getNavViewModel<HourlyWeatherViewModel>()
-    val swipeRefreshState = rememberSwipeRefreshState(isRefreshing = viewModel.showLoading.value)
 
-    val selectedLocation = remember { mutableStateOf<LatLng?>(null) }
-    val showMap = remember { mutableStateOf(true) }
+//    val selectedLocation = remember { mutableStateOf<LatLng?>(null) }
+//    val showMap = remember { mutableStateOf(true) }
 
-    if (showMap.value) {
+    Image(
+        painter = painterResource(R.drawable.img_background),
+        contentDescription = "Background",
+        contentScale = ContentScale.Crop,
+        modifier = Modifier
+            .fillMaxSize()
+    )
 
-        GoogleMap(
-            modifier = Modifier.fillMaxSize(),
-            onMapClick = { loc ->
-                selectedLocation.value = loc
-                viewModel.getWeatherInfo(loc.latitude, loc.longitude)
-                hourlyViewModel.getHourlyWeather()
-                showMap.value = false
+    if (!NetworkChecker(context).isInternetConnected) {
+        NoInternetDialog(onTryAgain = {
+            if (NetworkChecker(context).isInternetConnected) {
+//                viewModel.getWeatherInfo(
+//                    selectedLocation.value!!.latitude,
+//                    selectedLocation.value!!.longitude
+//                )
+            } else {
+                Toast.makeText(context, "No internet connection!", Toast.LENGTH_SHORT).show()
             }
-        )
+        }, onDismiss = {})
+    }
+
+    if (viewModel.showLoading.value) {
+
+        MainScreenShimmer()
+
     } else {
 
+        Box(modifier = Modifier.fillMaxSize()) {
 
-        Image(
-            painter = painterResource(R.drawable.img_background),
-            contentDescription = "Background",
-            contentScale = ContentScale.Crop,
-            modifier = Modifier
-                .fillMaxSize()
-        )
-//
-        if (!NetworkChecker(context).isInternetConnected) {
-            NoInternetDialog(onTryAgain = {
-                if (NetworkChecker(context).isInternetConnected) {
-                    viewModel.getWeatherInfo(
-                        selectedLocation.value!!.latitude,
-                        selectedLocation.value!!.longitude
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+            ) {
+
+                MainToolbar()
+
+                CityName(viewModel.weatherInfo.value, getDateOfMobile())
+
+                Weather(viewModel.weatherInfo.value)
+
+                WeatherInfo(viewModel.weatherInfo.value)
+
+                TempDays {
+                    navigation.navigate(MyScreens.WeatherScreen.route)
+                }
+
+                Divider(
+                    color = Color(226, 162, 114),
+                    thickness = 0.5.dp,
+                    modifier = Modifier.padding(
+                        start = 32.dp,
+                        top = 8.dp,
+                        bottom = 8.dp,
+                        end = 32.dp
                     )
-                } else {
-                    Toast.makeText(context, "No internet connection!", Toast.LENGTH_SHORT).show()
-                }
-            }, onDismiss = {})
-        }
+                )
 
-        if (viewModel.showLoading.value) {
+                Temperature(hourlyViewModel.hourlyWeather.value)
 
-            MainScreenShimmer()
-
-        } else {
-
-            Box(modifier = Modifier.fillMaxSize()) {
-
-                SwipeRefresh(state = swipeRefreshState, onRefresh = {
-                    if (viewModel.showLoading.value) {
-                        viewModel.getWeatherInfo(
-                            selectedLocation.value!!.latitude,
-                            selectedLocation.value!!.longitude
-                        )
-                        hourlyViewModel.getHourlyWeather()
-                    }
-                }) {
-
-                    Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .verticalScroll(rememberScrollState())
-                    ) {
-
-                        MainToolbar()
-
-                        CityName(viewModel.weatherInfo.value, getDateOfMobile())
-
-                        Weather(viewModel.weatherInfo.value)
-
-                        WeatherInfo(viewModel.weatherInfo.value)
-
-                        TempDays {
-                            navigation.navigate(MyScreens.WeatherScreen.route)
-                        }
-
-                        Divider(
-                            color = Color(226, 162, 114),
-                            thickness = 0.5.dp,
-                            modifier = Modifier.padding(
-                                start = 32.dp,
-                                top = 8.dp,
-                                bottom = 8.dp,
-                                end = 32.dp
-                            )
-                        )
-
-                        Temperature(hourlyViewModel.hourlyWeather.value)
-
-                    }
-                }
             }
         }
     }
@@ -460,21 +427,6 @@ fun TempDays(onDaysWeather: () -> Unit) {
 
     }
 }
-
-//@Composable
-//fun SwipeRefreshLayout(isLoading: Boolean) {
-//    ComposePullToRefresh(
-//        isRefreshing = isLoading,
-//        onRefresh = {
-//
-//        },
-//        indicatorColor = MaterialTheme.colors.onPrimary,
-//        content = {
-//
-//        }
-//    )
-//
-//}
 
 @Composable
 fun NoInternetDialog(

@@ -83,13 +83,11 @@ dependencies {
     //Shimmer
     implementation 'com.valentinilk.shimmer:compose-shimmer:1.0.4'
 
-    //Swipe Refresh
-    implementation 'com.google.accompanist:accompanist-swiperefresh:0.27.0'
-    implementation 'androidx.lifecycle:lifecycle-viewmodel-compose:2.6.1'
+    //Location
+    implementation 'com.google.android.gms:play-services-location:21.0.1'
 
-    //Google Maps
-    implementation 'com.google.maps.android:maps-compose:1.0.0'
-    implementation 'com.google.android.gms:play-services-maps:18.1.0'
-
+    //Dialog
+    implementation 'com.maxkeppeler.sheets-compose-dialogs:core:1.2.0'
+    implementation 'com.maxkeppeler.sheets-compose-dialogs:info:1.2.0'
 
 }
