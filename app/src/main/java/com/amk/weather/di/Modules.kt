@@ -8,6 +8,7 @@ import com.amk.weather.model.repository.daysWeather.DaysWeatherRepositoryImpl
 import com.amk.weather.model.repository.hourlyWeather.HourlyWeatherRepository
 import com.amk.weather.model.repository.hourlyWeather.HourlyWeatherRepositoryImpl
 import com.amk.weather.ui.daysweather.WeatherByDayViewModel
+import com.amk.weather.ui.locationscreen.LocationScreenViewModel
 import com.amk.weather.ui.mainscreen.HourlyWeatherViewModel
 import com.amk.weather.ui.mainscreen.MainScreenViewModel
 import org.koin.androidx.viewmodel.dsl.viewModel
@@ -22,5 +23,6 @@ val myModules = module {
     viewModel { MainScreenViewModel(get()) }
     viewModel { WeatherByDayViewModel(get()) }
     viewModel { HourlyWeatherViewModel(get()) }
+    viewModel { LocationScreenViewModel(get()) }
 
 }

@@ -14,6 +14,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -28,9 +31,13 @@ import com.amk.weather.di.myModules
 import com.amk.weather.model.data.CurrentWeatherResponse
 import com.amk.weather.model.data.HourlyWeather
 import com.amk.weather.model.data.HourlyWeatherResponse
+import com.amk.weather.model.data.LocationData
+import com.amk.weather.model.repository.locationDataStore.LocationDataStore
 import com.amk.weather.ui.shimmer.MainScreenShimmer
+import com.amk.weather.ui.shimmer.TemperatureShimmer
 import com.amk.weather.ui.theme.*
 import com.amk.weather.util.*
+import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import dev.burnoo.cokoin.Koin
 import dev.burnoo.cokoin.navigation.getNavController
 import dev.burnoo.cokoin.navigation.getNavViewModel
@@ -42,8 +49,7 @@ class MainActivity : ComponentActivity() {
             Koin(appDeclaration = { modules(myModules) }) {
                 WeatherTheme {
                     Surface(
-                        modifier = Modifier.fillMaxSize(),
-                        color = MaterialTheme.colors.background
+                        modifier = Modifier.fillMaxSize(), color = MaterialTheme.colors.background
                     ) {
                         MainWeatherScreen()
                     }
@@ -57,28 +63,38 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun MainWeatherScreen() {
     val context = LocalContext.current
+    val uiController = rememberSystemUiController()
+    SideEffect { uiController.setStatusBarColor(Background) }
     val navigation = getNavController()
     val viewModel = getNavViewModel<MainScreenViewModel>()
     val hourlyViewModel = getNavViewModel<HourlyWeatherViewModel>()
+    val locData = LocationDataStore(context)
+    val locationData = locData.getData.collectAsState(
+        initial = LocationData(
+            0.0,
+            0.0
+        )
+    )
+    val lat = mutableStateOf(locationData.value.lat)
+    val long = mutableStateOf(locationData.value.long)
 
-//    val selectedLocation = remember { mutableStateOf<LatLng?>(null) }
-//    val showMap = remember { mutableStateOf(true) }
+    if (lat.value != 0.0 && long.value != 0.0) {
+        viewModel.getWeatherInfo(lat.value, long.value)
+        hourlyViewModel.getHourlyWeather(lat.value, long.value)
+    }
 
     Image(
         painter = painterResource(R.drawable.img_background),
         contentDescription = "Background",
         contentScale = ContentScale.Crop,
-        modifier = Modifier
-            .fillMaxSize()
+        modifier = Modifier.fillMaxSize()
     )
 
     if (!NetworkChecker(context).isInternetConnected) {
         NoInternetDialog(onTryAgain = {
             if (NetworkChecker(context).isInternetConnected) {
-//                viewModel.getWeatherInfo(
-//                    selectedLocation.value!!.latitude,
-//                    selectedLocation.value!!.longitude
-//                )
+                viewModel.getWeatherInfo(lat.value, long.value)
+                hourlyViewModel.getHourlyWeather(lat.value, long.value)
             } else {
                 Toast.makeText(context, "No internet connection!", Toast.LENGTH_SHORT).show()
             }
@@ -112,18 +128,22 @@ fun MainWeatherScreen() {
                 }
 
                 Divider(
-                    color = Color(226, 162, 114),
-                    thickness = 0.5.dp,
-                    modifier = Modifier.padding(
-                        start = 32.dp,
-                        top = 8.dp,
-                        bottom = 8.dp,
-                        end = 32.dp
+                    color = Color(226, 162, 114), thickness = 0.5.dp, modifier = Modifier.padding(
+                        start = 32.dp, top = 8.dp, bottom = 8.dp, end = 32.dp
                     )
                 )
 
-                Temperature(hourlyViewModel.hourlyWeather.value)
-
+                if (hourlyViewModel.hourlyWeather.value.cod == 200) {
+                    Temperature(hourlyViewModel.hourlyWeather.value)
+                }else{
+                    LazyRow(
+                        modifier = Modifier.padding(start = 16.dp, top = 2.dp, bottom = 10.dp)
+                    ) {
+                        items(8) {
+                            TemperatureShimmer()
+                        }
+                    }
+                }
             }
         }
     }
@@ -172,8 +192,7 @@ fun CityName(weatherName: CurrentWeatherResponse, date: String) {
             .fillMaxWidth(),
         verticalArrangement = Arrangement.SpaceEvenly,
         horizontalAlignment = Alignment.Start
-    )
-    {
+    ) {
 
         Text(
             modifier = Modifier.padding(top = 8.dp, start = 32.dp),
@@ -204,8 +223,7 @@ fun Weather(weather: CurrentWeatherResponse) {
     ) {
 
         Image(
-            modifier = Modifier
-                .size(193.dp, 190.dp),
+            modifier = Modifier.size(193.dp, 190.dp),
             painter = painterResource(id = weatherIcon(weather.weather[0].icon)),
             contentDescription = null
         )
@@ -272,8 +290,7 @@ fun WeatherInfoItem(itemImage: Int, itemText: String, itemValue: String) {
             verticalAlignment = Alignment.CenterVertically
         ) {
             Image(
-                modifier = Modifier
-                    .size(46.dp),
+                modifier = Modifier.size(46.dp),
                 painter = painterResource(id = itemImage),
                 contentDescription = null
             )
@@ -291,8 +308,7 @@ fun WeatherInfoItem(itemImage: Int, itemText: String, itemValue: String) {
 
 
         Row(
-            modifier = Modifier
-                .padding(end = 38.dp),
+            modifier = Modifier.padding(end = 38.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.End
         ) {
@@ -346,8 +362,7 @@ fun TemperatureItem(hourlyWeather: HourlyWeather) {
                 text = formatTimeString(hourlyWeather.dt_txt),
                 fontSize = 14.sp,
                 fontFamily = interRegular,
-                color =
-                TemperatureItemTime,
+                color = TemperatureItemTime,
             )
 
             Image(
@@ -405,8 +420,7 @@ fun TempDays(onDaysWeather: () -> Unit) {
         ) {
 
             Text(
-                modifier = Modifier
-                    .align(Alignment.CenterVertically),
+                modifier = Modifier.align(Alignment.CenterVertically),
                 text = "Next 7 Days",
                 fontSize = 14.sp,
                 fontFamily = interRegular,
@@ -417,8 +431,7 @@ fun TempDays(onDaysWeather: () -> Unit) {
                 Image(
                     painter = painterResource(id = R.drawable.ic_next),
                     contentDescription = null,
-                    modifier = Modifier
-                        .size(40.dp)
+                    modifier = Modifier.size(40.dp)
                 )
             }
 
@@ -430,19 +443,16 @@ fun TempDays(onDaysWeather: () -> Unit) {
 
 @Composable
 fun NoInternetDialog(
-    onTryAgain: () -> Unit,
-    onDismiss: () -> Unit
+    onTryAgain: () -> Unit, onDismiss: () -> Unit
 ) {
-    AlertDialog(
-        onDismissRequest = { onDismiss.invoke() },
+    AlertDialog(onDismissRequest = { onDismiss.invoke() },
         title = { Text(text = "No Internet Connection") },
         text = { Text(text = "Please check your internet connection and try again.") },
         confirmButton = {
             TextButton(onClick = { onTryAgain.invoke() }) {
                 Text(text = "Try again")
             }
-        }
-    )
+        })
 }
 
 @Preview(showBackground = true)

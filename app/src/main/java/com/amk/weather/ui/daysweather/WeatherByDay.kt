@@ -7,16 +7,21 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.IconButton
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Surface
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -25,12 +30,15 @@ import com.amk.weather.R
 import com.amk.weather.di.myModules
 import com.amk.weather.model.data.DaysWeather
 import com.amk.weather.model.data.DaysWeatherResponse
+import com.amk.weather.model.data.LocationData
+import com.amk.weather.model.repository.locationDataStore.LocationDataStore
 import com.amk.weather.ui.shimmer.DaysWeatherShimmer
 import com.amk.weather.ui.theme.*
 import com.amk.weather.util.convertKelvinToCelsius
 import com.amk.weather.util.convertMeterOnMinToKilometerOnHour
 import com.amk.weather.util.convertUnixToDate
 import com.amk.weather.util.weatherIcon
+import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import dev.burnoo.cokoin.Koin
 import dev.burnoo.cokoin.navigation.getNavController
 import dev.burnoo.cokoin.navigation.getNavViewModel
@@ -55,9 +63,19 @@ class WeatherByDay : ComponentActivity() {
 
 @Composable
 fun DaysWeather() {
+    val context = LocalContext.current
+    val uiController = rememberSystemUiController()
+    SideEffect { uiController.setStatusBarColor(Background) }
     val navigation = getNavController()
     val viewModel = getNavViewModel<WeatherByDayViewModel>()
-    viewModel.getWeatherByDay()
+    val locData = LocationDataStore(context)
+    val locationData = locData.getData.collectAsState(
+        initial = LocationData(
+            0.0,
+            0.0
+        )
+    )
+    viewModel.getWeatherByDay(locationData.value.lat, locationData.value.long)
 
     Image(
         painter = painterResource(R.drawable.img_background),
@@ -68,7 +86,10 @@ fun DaysWeather() {
     )
 
     if (!viewModel.showLoading.value) {
-        Box(modifier = Modifier.fillMaxSize()) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+        ) {
 
             Column(
                 modifier = Modifier
@@ -236,8 +257,7 @@ fun TomorrowWeatherItem(itemImage: Int, itemValue: String) {
 fun WeekWeather(weather: DaysWeatherResponse) {
     LazyColumn(
         modifier = Modifier.padding(top = 2.dp, bottom = 10.dp),
-        contentPadding = PaddingValues(start = 16.dp, end = 16.dp),
-        userScrollEnabled = true
+        contentPadding = PaddingValues(start = 16.dp, end = 16.dp)
     ) {
         items(weather.list.size) {
             if (it in 2..6) {

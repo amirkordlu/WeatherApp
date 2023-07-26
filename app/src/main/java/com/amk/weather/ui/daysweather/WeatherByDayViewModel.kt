@@ -15,9 +15,9 @@ class WeatherByDayViewModel(
     val weatherByDay = mutableStateOf(DWREx)
     val showLoading = mutableStateOf(true)
 
-    fun getWeatherByDay() {
+    fun getWeatherByDay(lat: Double, long: Double) {
         viewModelScope.launch(coroutineExceptionHandler) {
-            val weather = daysWeatherRepository.getDaysWeather()
+            val weather = daysWeatherRepository.getDaysWeather(lat, long)
             if (weather.cod == 200) {
                 weatherByDay.value = weather
                 showLoading.value = false

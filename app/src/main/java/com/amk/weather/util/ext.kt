@@ -2,6 +2,13 @@ package com.amk.weather.util
 
 import android.annotation.SuppressLint
 import android.util.Log
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.Font
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.unit.sp
 import com.amk.weather.R
 import com.amk.weather.model.data.*
 import kotlinx.coroutines.CoroutineExceptionHandler
@@ -105,4 +112,17 @@ fun weatherIcon(icon: String): Int {
     return R.drawable.ic_error
 }
 
+fun appendTextDialog(text: String):AnnotatedString {
+    val annotatedString = buildAnnotatedString {
+        withStyle(
+            style = SpanStyle(
+                fontFamily = FontFamily(Font(R.font.nahid)),
+                fontSize = 14.sp
+            )
+        ) {
+            append(text)
+        }
+    }
+    return annotatedString
+}
 
