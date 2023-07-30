@@ -135,7 +135,7 @@ fun MainWeatherScreen() {
 
                 if (hourlyViewModel.hourlyWeather.value.cod == 200) {
                     Temperature(hourlyViewModel.hourlyWeather.value)
-                }else{
+                } else {
                     LazyRow(
                         modifier = Modifier.padding(start = 16.dp, top = 2.dp, bottom = 10.dp)
                     ) {
@@ -263,7 +263,7 @@ fun Weather(weather: CurrentWeatherResponse) {
 
 @Composable
 fun WeatherInfo(weatherInfo: CurrentWeatherResponse) {
-    WeatherInfoItem(R.drawable.ic_umberella, "RainFall", "3cm")
+    WeatherInfoItem(R.drawable.ic_pressure, "Pressure", "${weatherInfo.main.pressure} Pa")
     WeatherInfoItem(
         R.drawable.ic_wind,
         "Wind",
