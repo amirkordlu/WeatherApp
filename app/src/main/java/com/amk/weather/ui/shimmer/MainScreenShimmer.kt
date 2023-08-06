@@ -37,7 +37,7 @@ fun MainScreenShimmer() {
                 .verticalScroll(rememberScrollState())
         ) {
 
-            MainToolbar()
+            MainToolbar(onSearchClicked = { navigation.navigate(MyScreens.LocationScreen.route) })
 
             CityNameShimmer()
 

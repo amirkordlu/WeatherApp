@@ -115,7 +115,7 @@ fun MainWeatherScreen() {
                     .verticalScroll(rememberScrollState())
             ) {
 
-                MainToolbar()
+                MainToolbar(onSearchClicked = { navigation.navigate(MyScreens.LocationScreen.route) })
 
                 CityName(viewModel.weatherInfo.value, getDateOfMobile())
 
@@ -150,7 +150,7 @@ fun MainWeatherScreen() {
 }
 
 @Composable
-fun MainToolbar() {
+fun MainToolbar(onSearchClicked: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -159,7 +159,7 @@ fun MainToolbar() {
         verticalAlignment = Alignment.CenterVertically
     ) {
 
-        IconButton(onClick = { /*TODO*/ }) {
+        IconButton(onClick = { onSearchClicked.invoke() }) {
             Image(
                 painter = painterResource(id = R.drawable.ic_search),
                 contentDescription = null,
