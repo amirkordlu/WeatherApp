@@ -1,6 +1,7 @@
 package com.amk.weather.ui.theme
 
 import androidx.compose.material.Typography
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
@@ -34,3 +35,13 @@ val interBold = FontFamily(Font(R.font.inter_bold))
 val interLight = FontFamily(Font(R.font.inter_light))
 val interMedium = FontFamily(Font(R.font.inter_medium))
 val interSemiBold = FontFamily(Font(R.font.inter_semibold))
+val todayStyle = TextStyle(
+    fontFamily = FontFamily(Font(R.font.inter_bold)),
+    fontSize = 14.sp,
+    color = Color(49, 51, 65)
+)
+val tomorrowStyle = TextStyle(
+    fontFamily = FontFamily(Font(R.font.inter_regular)),
+    fontSize = 14.sp,
+    color = Color(214, 153, 107)
+)

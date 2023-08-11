@@ -8,21 +8,24 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.ClickableText
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.SideEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -41,6 +44,7 @@ import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import dev.burnoo.cokoin.Koin
 import dev.burnoo.cokoin.navigation.getNavController
 import dev.burnoo.cokoin.navigation.getNavViewModel
+import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -71,12 +75,13 @@ fun MainWeatherScreen() {
     val locData = LocationDataStore(context)
     val locationData = locData.getData.collectAsState(
         initial = LocationData(
-            0.0,
-            0.0
+            0.0, 0.0
         )
     )
     val lat = mutableStateOf(locationData.value.lat)
     val long = mutableStateOf(locationData.value.long)
+    val listState = rememberLazyListState()
+    val coroutineScope = rememberCoroutineScope()
 
     if (lat.value != 0.0 && long.value != 0.0) {
         viewModel.getWeatherInfo(lat.value, long.value)
@@ -123,9 +128,11 @@ fun MainWeatherScreen() {
 
                 WeatherInfo(viewModel.weatherInfo.value)
 
-                TempDays {
-                    navigation.navigate(MyScreens.WeatherScreen.route)
-                }
+                TempDays(
+                    onTodayClicked = { coroutineScope.launch { listState.animateScrollToItem(0) } },
+                    onTomorrowClicked = { coroutineScope.launch { listState.animateScrollToItem(8) } },
+                    onDaysWeather = { navigation.navigate(MyScreens.WeatherScreen.route) }
+                )
 
                 Divider(
                     color = Color(226, 162, 114), thickness = 0.5.dp, modifier = Modifier.padding(
@@ -134,7 +141,7 @@ fun MainWeatherScreen() {
                 )
 
                 if (hourlyViewModel.hourlyWeather.value.cod == 200) {
-                    Temperature(hourlyViewModel.hourlyWeather.value)
+                    Temperature(hourlyViewModel.hourlyWeather.value, listState)
                 } else {
                     LazyRow(
                         modifier = Modifier.padding(start = 16.dp, top = 2.dp, bottom = 10.dp)
@@ -326,11 +333,12 @@ fun WeatherInfoItem(itemImage: Int, itemText: String, itemValue: String) {
 }
 
 @Composable
-fun Temperature(hourlyWeather: HourlyWeatherResponse) {
+fun Temperature(hourlyWeather: HourlyWeatherResponse, lazyRowState: LazyListState) {
     LazyRow(
         modifier = Modifier.padding(top = 8.dp, bottom = 14.dp),
         contentPadding = PaddingValues(start = 16.dp, end = 16.dp),
-        userScrollEnabled = true
+        userScrollEnabled = true,
+        state = lazyRowState
     ) {
         items(hourlyWeather.list.size) {
             if (it in 0..7) {
@@ -384,8 +392,14 @@ fun TemperatureItem(hourlyWeather: HourlyWeather) {
 
 }
 
+@SuppressLint("UnrememberedMutableState")
 @Composable
-fun TempDays(onDaysWeather: () -> Unit) {
+fun TempDays(
+    onTodayClicked: () -> Unit, onTomorrowClicked: () -> Unit, onDaysWeather: () -> Unit
+) {
+    val todayClicked = remember { mutableStateOf(1) }
+    val tomorrowClicked = remember { mutableStateOf(0) }
+
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -396,19 +410,33 @@ fun TempDays(onDaysWeather: () -> Unit) {
             modifier = Modifier.padding(start = 32.dp, top = 14.dp)
         ) {
 
-            Text(
-                text = "Today",
-                fontSize = 14.sp,
-                fontFamily = interBold,
-                color = Color(49, 51, 65),
+            ClickableText(text = buildAnnotatedString {
+                append("Today")
+            }, onClick = {
+                onTodayClicked.invoke()
+                todayClicked.value = 1
+                tomorrowClicked.value = 0
+            },
+                style = if (todayClicked.value == 1) {
+                    todayStyle
+                } else {
+                    tomorrowStyle
+                }
             )
 
-            Text(
+            ClickableText(text = buildAnnotatedString {
+                append("Tomorrow")
+            }, onClick = {
+                onTomorrowClicked.invoke()
+                todayClicked.value = 0
+                tomorrowClicked.value = 1
+            },
                 modifier = Modifier.padding(start = 24.dp),
-                text = "Tomorrow",
-                fontSize = 14.sp,
-                fontFamily = interRegular,
-                color = Color(214, 153, 107),
+                style = if (tomorrowClicked.value == 0) {
+                    tomorrowStyle
+                } else {
+                    todayStyle
+                }
             )
 
         }
@@ -419,12 +447,20 @@ fun TempDays(onDaysWeather: () -> Unit) {
             modifier = Modifier.padding(top = 14.dp, end = 20.dp)
         ) {
 
-            Text(
-                modifier = Modifier.align(Alignment.CenterVertically),
-                text = "Next 7 Days",
-                fontSize = 14.sp,
-                fontFamily = interRegular,
-                color = Color(214, 153, 107),
+            ClickableText(
+                text = buildAnnotatedString {
+                    withStyle(
+                        style = SpanStyle(
+                            fontFamily = interRegular,
+                            fontSize = 14.sp,
+                            color = Color(214, 153, 107)
+                        )
+                    ) {
+                        append("Next Days")
+                    }
+                },
+                onClick = { onDaysWeather.invoke() },
+                modifier = Modifier.align(Alignment.CenterVertically)
             )
 
             IconButton(onClick = { onDaysWeather.invoke() }) {
