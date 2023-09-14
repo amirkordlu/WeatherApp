@@ -90,7 +90,7 @@ fun LocationPage() {
     val viewModel = getNavViewModel<LocationScreenViewModel>()
 
     if (!checkPermission(context)) {
-
+        locationPermissionDialogState.show()
         CoreDialog(
             state = locationPermissionDialogState,
             selection = CoreSelection(
@@ -125,17 +125,17 @@ fun LocationPage() {
             onPositiveValid = true,
             body = {
                 Text(
-                    text = "برای جستجوی خودکار شهر شما نیاز به مجوز موقعیت مکانی شما داریم، اجازه میدی؟",
+                    text = "برای جستجوی خودکار شهر شما نیاز به مجوز موقعیت مکانی داریم، اجازه میدی؟",
                     textAlign = TextAlign.End,
                     fontFamily = FontFamily(Font(R.font.nahid)),
                     fontSize = 16.sp
                 )
             },
         )
-        locationPermissionDialogState.show()
     }
 
     if (!isLocationEnabled(context)) {
+        locationEnabledDialogState.show()
         CoreDialog(
             state = locationEnabledDialogState,
             selection = CoreSelection(
@@ -179,7 +179,6 @@ fun LocationPage() {
                 )
             },
         )
-        locationEnabledDialogState.show()
     }
 
     Image(
@@ -239,8 +238,12 @@ fun LocationPage() {
                             }
                         }
 
-                        navigation.navigate(MyScreens.MainScreen.route)
-
+                        navigation.navigate(MyScreens.MainScreen.route) {
+                            popUpTo(MyScreens.MainScreen.route) {
+                                inclusive = true
+                            }
+                        }
+                        
                     } else {
                         //Setting Open here
                         Toast.makeText(context, "لوکیشن گوشیت خاموشه!", Toast.LENGTH_SHORT)
