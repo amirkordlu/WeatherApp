@@ -24,6 +24,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -43,6 +44,7 @@ import com.amk.weather.R
 import com.amk.weather.di.myModules
 import com.amk.weather.ui.theme.Background
 import com.amk.weather.ui.theme.WeatherTheme
+import com.amk.weather.ui.theme.locationButton
 import com.amk.weather.util.GPSUtils
 import com.amk.weather.util.MyScreens
 import com.amk.weather.util.appendTextDialog
@@ -224,17 +226,6 @@ fun LocationPage() {
                                 long.value = location.longitude
 
                                 viewModel.saveData(context, location.latitude, location.longitude)
-
-                                Toast.makeText(
-                                    context,
-                                    location.latitude.toString(),
-                                    Toast.LENGTH_SHORT
-                                ).show()
-                                Toast.makeText(
-                                    context,
-                                    location.longitude.toString(),
-                                    Toast.LENGTH_SHORT
-                                ).show()
                             }
                         }
 
@@ -243,7 +234,7 @@ fun LocationPage() {
                                 inclusive = true
                             }
                         }
-                        
+
                     } else {
                         //Setting Open here
                         Toast.makeText(context, "لوکیشن گوشیت خاموشه!", Toast.LENGTH_SHORT)
@@ -255,12 +246,14 @@ fun LocationPage() {
                     requestPermission(context)
                 }
 
-            }
+            },
+            colors = ButtonDefaults.buttonColors(backgroundColor = locationButton)
         ) {
             Text(
                 text = "مکان‌یابی خودکار",
                 textAlign = TextAlign.Center,
-                fontFamily = FontFamily(Font(R.font.nahid))
+                fontFamily = FontFamily(Font(R.font.nahid)),
+                color = Color.White
             )
         }
     }
