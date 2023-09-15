@@ -176,7 +176,7 @@ fun MainToolbar(onSearchClicked: () -> Unit) {
             )
         }
 
-        Text(text = "Weather App", fontSize = 22.sp, fontFamily = interMedium)
+        Text(text = "Eghlim App", fontSize = 22.sp, fontFamily = interMedium)
 
         IconButton(onClick = { /*TODO*/ }) {
             Image(
