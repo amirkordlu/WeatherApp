@@ -1,6 +1,7 @@
 plugins {
     id 'com.android.application'
     id 'org.jetbrains.kotlin.android'
+    id 'com.google.gms.google-services'
 }
 
 android {
@@ -97,5 +98,8 @@ dependencies {
     //Data Store
     implementation 'androidx.datastore:datastore-preferences:1.0.0'
 
+    //Firebase
+    implementation 'com.google.firebase:firebase-messaging-ktx:23.0.3'
+    implementation 'com.google.firebase:firebase-analytics-ktx:20.1.2'
 
 }

@@ -23,14 +23,19 @@ import com.amk.weather.ui.theme.WeatherTheme
 import com.amk.weather.util.LAT
 import com.amk.weather.util.LONG
 import com.amk.weather.util.MyScreens
+import com.google.firebase.analytics.FirebaseAnalytics
+import com.google.firebase.analytics.ktx.analytics
+import com.google.firebase.ktx.Firebase
 import dev.burnoo.cokoin.Koin
 import dev.burnoo.cokoin.navigation.KoinNavHost
 import kotlinx.coroutines.flow.Flow
 import org.koin.android.ext.koin.androidContext
 
 class MainActivity : ComponentActivity() {
+    private lateinit var analytics: FirebaseAnalytics
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        analytics = Firebase.analytics
         setContent {
             Koin(appDeclaration = {
                 androidContext(this@MainActivity)
