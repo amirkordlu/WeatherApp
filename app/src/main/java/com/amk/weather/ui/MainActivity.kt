@@ -1,6 +1,7 @@
 package com.amk.weather.ui
 
 import android.os.Bundle
+import android.view.View
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.fillMaxSize
@@ -35,6 +36,7 @@ class MainActivity : ComponentActivity() {
     private lateinit var analytics: FirebaseAnalytics
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        window.decorView.layoutDirection = View.LAYOUT_DIRECTION_LTR
         analytics = Firebase.analytics
         setContent {
             Koin(appDeclaration = {
