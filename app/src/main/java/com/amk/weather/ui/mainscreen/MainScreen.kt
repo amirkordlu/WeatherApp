@@ -7,11 +7,16 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.ClickableText
 import androidx.compose.foundation.verticalScroll
@@ -19,14 +24,20 @@ import androidx.compose.material.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.amk.weather.R
@@ -35,6 +46,7 @@ import com.amk.weather.model.data.CurrentWeatherResponse
 import com.amk.weather.model.data.HourlyWeather
 import com.amk.weather.model.data.HourlyWeatherResponse
 import com.amk.weather.model.data.LocationData
+import com.amk.weather.model.data.NavigationDrawerItem
 import com.amk.weather.model.repository.locationDataStore.LocationDataStore
 import com.amk.weather.ui.shimmer.MainScreenShimmer
 import com.amk.weather.ui.shimmer.TemperatureShimmer
@@ -44,6 +56,7 @@ import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import dev.burnoo.cokoin.Koin
 import dev.burnoo.cokoin.navigation.getNavController
 import dev.burnoo.cokoin.navigation.getNavViewModel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
@@ -82,18 +95,12 @@ fun MainWeatherScreen() {
     val long = mutableStateOf(locationData.value.long)
     val listState = rememberLazyListState()
     val coroutineScope = rememberCoroutineScope()
-
+    val scaffoldState = rememberScaffoldState()
     if (lat.value != 0.0 && long.value != 0.0) {
         viewModel.getWeatherInfo(lat.value, long.value)
         hourlyViewModel.getHourlyWeather(lat.value, long.value)
     }
 
-    Image(
-        painter = painterResource(R.drawable.img_background),
-        contentDescription = "Background",
-        contentScale = ContentScale.Crop,
-        modifier = Modifier.fillMaxSize()
-    )
 
     if (!NetworkChecker(context).isInternetConnected) {
         NoInternetDialog(onTryAgain = {
@@ -106,48 +113,95 @@ fun MainWeatherScreen() {
         }, onDismiss = {})
     }
 
-    if (viewModel.showLoading.value) {
 
-        MainScreenShimmer()
+    Scaffold(modifier = Modifier.fillMaxSize(),
+        scaffoldState = scaffoldState,
+        drawerContent = {
+            CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+                DrawerContent { itemLabel ->
+                    Toast.makeText(context, itemLabel, Toast.LENGTH_SHORT).show()
+                    coroutineScope.launch {
+                        // delay for the ripple effect
+                        delay(timeMillis = 250)
+                        scaffoldState.drawerState.close()
+                    }
+                }
+            }
+        }) {
 
-    } else {
+        it.calculateBottomPadding()
 
-        Box(modifier = Modifier.fillMaxSize()) {
+        Image(
+            painter = painterResource(R.drawable.img_background),
+            contentDescription = "Background",
+            contentScale = ContentScale.Crop,
+            modifier = Modifier.fillMaxSize()
+        )
 
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .verticalScroll(rememberScrollState())
-            ) {
+        if (viewModel.showLoading.value) {
 
-                MainToolbar(onSearchClicked = { navigation.navigate(MyScreens.LocationScreen.route) })
+            MainScreenShimmer()
 
-                CityName(viewModel.weatherInfo.value, getDateOfMobile())
+        } else {
 
-                Weather(viewModel.weatherInfo.value)
+            Box(modifier = Modifier.fillMaxSize()) {
 
-                WeatherInfo(viewModel.weatherInfo.value)
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .verticalScroll(rememberScrollState())
+                ) {
 
-                TempDays(
-                    onTodayClicked = { coroutineScope.launch { listState.animateScrollToItem(0) } },
-                    onTomorrowClicked = { coroutineScope.launch { listState.animateScrollToItem(8) } },
-                    onDaysWeather = { navigation.navigate(MyScreens.WeatherScreen.route) }
-                )
+                    MainToolbar(onSearchClicked = { navigation.navigate(MyScreens.LocationScreen.route) },
+                        onDrawerClicked = {
+                            coroutineScope.launch(coroutineExceptionHandler) {
+                                scaffoldState.drawerState.open()
+                            }
+                        })
 
-                Divider(
-                    color = Color(226, 162, 114), thickness = 0.5.dp, modifier = Modifier.padding(
-                        start = 32.dp, top = 8.dp, bottom = 8.dp, end = 32.dp
+                    CityName(viewModel.weatherInfo.value, getDateOfMobile())
+
+                    Weather(viewModel.weatherInfo.value)
+
+                    WeatherInfo(viewModel.weatherInfo.value)
+
+                    TempDays(onTodayClicked = {
+                        coroutineScope.launch {
+                            listState.animateScrollToItem(
+                                0
+                            )
+                        }
+                    },
+                        onTomorrowClicked = {
+                            coroutineScope.launch {
+                                listState.animateScrollToItem(
+                                    8
+                                )
+                            }
+                        },
+                        onDaysWeather = { navigation.navigate(MyScreens.WeatherScreen.route) })
+
+                    Divider(
+                        color = Color(226, 162, 114),
+                        thickness = 0.5.dp,
+                        modifier = Modifier.padding(
+                            start = 32.dp, top = 8.dp, bottom = 8.dp, end = 32.dp
+                        )
                     )
-                )
 
-                if (hourlyViewModel.hourlyWeather.value.cod == 200) {
-                    Temperature(hourlyViewModel.hourlyWeather.value, listState)
-                } else {
-                    LazyRow(
-                        modifier = Modifier.padding(start = 16.dp, top = 2.dp, bottom = 10.dp)
-                    ) {
-                        items(8) {
-                            TemperatureShimmer()
+                    if (hourlyViewModel.hourlyWeather.value.cod == 200) {
+                        Temperature(hourlyViewModel.hourlyWeather.value, listState)
+                    } else {
+                        LazyRow(
+                            modifier = Modifier.padding(
+                                start = 16.dp,
+                                top = 2.dp,
+                                bottom = 10.dp
+                            )
+                        ) {
+                            items(8) {
+                                TemperatureShimmer()
+                            }
                         }
                     }
                 }
@@ -157,7 +211,7 @@ fun MainWeatherScreen() {
 }
 
 @Composable
-fun MainToolbar(onSearchClicked: () -> Unit) {
+fun MainToolbar(onSearchClicked: () -> Unit, onDrawerClicked: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -178,7 +232,7 @@ fun MainToolbar(onSearchClicked: () -> Unit) {
 
         Text(text = "Eghlim App", fontSize = 22.sp, fontFamily = interMedium)
 
-        IconButton(onClick = { /*TODO*/ }) {
+        IconButton(onClick = { onDrawerClicked.invoke() }) {
             Image(
                 painter = painterResource(id = R.drawable.ic_menu),
                 contentDescription = null,
@@ -416,21 +470,22 @@ fun TempDays(
                 onTodayClicked.invoke()
                 todayClicked.value = 1
                 tomorrowClicked.value = 0
-            },
-                style = if (todayClicked.value == 1) {
-                    todayStyle
-                } else {
-                    tomorrowStyle
-                }
+            }, style = if (todayClicked.value == 1) {
+                todayStyle
+            } else {
+                tomorrowStyle
+            }
             )
 
-            ClickableText(text = buildAnnotatedString {
-                append("Tomorrow")
-            }, onClick = {
-                onTomorrowClicked.invoke()
-                todayClicked.value = 0
-                tomorrowClicked.value = 1
-            },
+            ClickableText(
+                text = buildAnnotatedString {
+                    append("Tomorrow")
+                },
+                onClick = {
+                    onTomorrowClicked.invoke()
+                    todayClicked.value = 0
+                    tomorrowClicked.value = 1
+                },
                 modifier = Modifier.padding(start = 24.dp),
                 style = if (tomorrowClicked.value == 0) {
                     tomorrowStyle
@@ -489,6 +544,144 @@ fun NoInternetDialog(
                 Text(text = "Try again")
             }
         })
+}
+
+@Composable
+private fun DrawerContent(
+    gradientColors: List<Color> = listOf(Color(0xFFFFD291), Color(0xFFF39876)),
+    itemClick: (String) -> Unit
+) {
+
+    val itemsList = prepareNavigationDrawerItems()
+
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(brush = Brush.verticalGradient(colors = gradientColors)),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        contentPadding = PaddingValues(vertical = 36.dp)
+    ) {
+
+        item {
+
+            // user's image
+            Image(
+                modifier = Modifier
+                    .size(size = 120.dp)
+                    .clip(shape = CircleShape),
+                painter = painterResource(id = R.drawable.ic_sun),
+                contentDescription = "Profile Image"
+            )
+
+            // user's name
+            Text(
+                modifier = Modifier.padding(top = 12.dp),
+                text = "Eghlim's User",
+                fontSize = 26.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color.White
+            )
+
+            // user's email
+            Text(
+                modifier = Modifier.padding(top = 8.dp, bottom = 30.dp),
+                text = "user@email.com",
+                fontWeight = FontWeight.Normal,
+                fontSize = 16.sp,
+                color = Color.White
+            )
+        }
+
+        items(itemsList) { item ->
+            NavigationListItem(item = item) {
+                itemClick(item.label)
+            }
+        }
+    }
+}
+
+@Composable
+private fun NavigationListItem(
+    item: NavigationDrawerItem, unreadBubbleColor: Color = Color(0xFF0FFF93), itemClick: () -> Unit
+) {
+    Row(modifier = Modifier
+        .fillMaxWidth()
+        .clickable {
+            itemClick()
+        }
+        .padding(horizontal = 24.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.End) {
+
+        // label
+        Text(
+            modifier = Modifier.padding(end = 16.dp),
+            text = item.label,
+            fontSize = 20.sp,
+            fontWeight = FontWeight.Medium,
+            color = Color.White,
+            fontFamily = nahidFont
+        )
+
+        // icon and unread bubble
+        Box {
+
+            Icon(
+                modifier = Modifier
+                    .padding(all = if (item.showUnreadBubble && item.label == "Messages") 5.dp else 2.dp)
+                    .size(size = if (item.showUnreadBubble && item.label == "Messages") 24.dp else 28.dp),
+                painter = item.image,
+                contentDescription = null,
+                tint = Color.White
+            )
+
+            // unread bubble
+            if (item.showUnreadBubble) {
+                Box(
+                    modifier = Modifier
+                        .size(size = 8.dp)
+                        .align(alignment = Alignment.TopEnd)
+                        .background(color = unreadBubbleColor, shape = CircleShape)
+                )
+            }
+        }
+
+    }
+}
+
+@Composable
+private fun prepareNavigationDrawerItems(): List<NavigationDrawerItem> {
+    val itemsList = arrayListOf<NavigationDrawerItem>()
+
+    itemsList.add(
+        NavigationDrawerItem(
+            image = painterResource(id = R.drawable.ic_home), label = "خانه"
+        )
+    )
+    itemsList.add(
+        NavigationDrawerItem(
+            image = painterResource(id = R.drawable.ic_bell),
+            label = "پیام ها",
+            showUnreadBubble = true
+        )
+    )
+    itemsList.add(
+        NavigationDrawerItem(
+            image = painterResource(id = R.drawable.ic_credit_card), label = "اشتراک"
+        )
+    )
+    itemsList.add(
+        NavigationDrawerItem(
+            image = painterResource(id = R.drawable.ic_settings), label = "تنظیمات"
+        )
+    )
+    itemsList.add(
+        NavigationDrawerItem(
+            image = painterResource(id = R.drawable.ic_log_out), label = "خروج"
+        )
+    )
+
+    return itemsList
 }
 
 @Preview(showBackground = true)

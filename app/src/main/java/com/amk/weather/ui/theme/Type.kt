@@ -35,6 +35,7 @@ val interBold = FontFamily(Font(R.font.inter_bold))
 val interLight = FontFamily(Font(R.font.inter_light))
 val interMedium = FontFamily(Font(R.font.inter_medium))
 val interSemiBold = FontFamily(Font(R.font.inter_semibold))
+val nahidFont = FontFamily(Font(R.font.nahid))
 val todayStyle = TextStyle(
     fontFamily = FontFamily(Font(R.font.inter_bold)),
     fontSize = 14.sp,
