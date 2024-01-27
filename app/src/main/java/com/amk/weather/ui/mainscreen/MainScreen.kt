@@ -220,9 +220,9 @@ fun MainToolbar(onSearchClicked: () -> Unit, onDrawerClicked: () -> Unit) {
         verticalAlignment = Alignment.CenterVertically
     ) {
 
-        IconButton(onClick = { onSearchClicked.invoke() }) {
+        IconButton(onClick = { onDrawerClicked.invoke() }) {
             Image(
-                painter = painterResource(id = R.drawable.ic_search),
+                painter = painterResource(id = R.drawable.ic_menu),
                 contentDescription = null,
                 modifier = Modifier
                     .padding(start = 16.dp)
@@ -232,9 +232,9 @@ fun MainToolbar(onSearchClicked: () -> Unit, onDrawerClicked: () -> Unit) {
 
         Text(text = "Eghlim App", fontSize = 22.sp, fontFamily = interMedium)
 
-        IconButton(onClick = { onDrawerClicked.invoke() }) {
+        IconButton(onClick = { onSearchClicked.invoke() }) {
             Image(
-                painter = painterResource(id = R.drawable.ic_menu),
+                painter = painterResource(id = R.drawable.ic_search),
                 contentDescription = null,
                 modifier = Modifier
                     .padding(end = 16.dp)
